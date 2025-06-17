@@ -36,22 +36,24 @@ export default function wasm(): any {
         return `export default ${wasmHelper.code}`;
       }
 
-      if (!id.toLowerCase().endsWith(".wasm")) {
+      if (!id.toLowerCase().match(/.*\.wasm(\?module)?$/)) {
         return;
       }
 
+      const moduleId = id.replace(/\?module$/, "");
+
       // Get WASM's download URL by Vite's ?url import
-      const wasmUrlUrl = id + "?url";
+      const wasmUrlUrl = moduleId + "?url";
       const wasmUrlDeclaration =
         options?.ssr || runningInVitest
-          ? `const __vite__wasmUrl = ${JSON.stringify(await createBase64UriForWasm(id))}`
+          ? `const __vite__wasmUrl = ${JSON.stringify(await createBase64UriForWasm(moduleId))}`
           : `import __vite__wasmUrl from ${JSON.stringify(wasmUrlUrl)}`;
 
       return `
 URL = globalThis.URL
 ${wasmUrlDeclaration}
 import __vite__initWasm from "${wasmHelper.id}"
-${await generateGlueCode(id, { initWasm: "__vite__initWasm", wasmUrl: "__vite__wasmUrl" })}
+${await generateGlueCode(moduleId, { initWasm: "__vite__initWasm", wasmUrl: "__vite__wasmUrl" })}
 `;
     }
   };
